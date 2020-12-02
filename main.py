@@ -7,14 +7,14 @@ import numpy as np
 from python_speech_features import mfcc, fbank, logfbank
 from scipy.spatial import distance
 
-
+from numba import jit
 
 # # y, sr = librosa.load('./motbuoc.mp3')
 # # feat_mby = extract_features(y)
-
-y, sr = librosa.load('./lquery.mp3')
+print("loading")
+y, sr = librosa.load('./cilu_q.mp3')
 query_feature = librosa.feature.mfcc(y, sr)
-
+print("done!")
 b =  query_feature.reshape(-1)
 # distan = 0
 # count = 0
@@ -31,24 +31,32 @@ b =  query_feature.reshape(-1)
 
 # distan /= count
 # print(distan)
+@jit
+def search():
 
-distance_list = []
-song_list = []
-for song in os.listdir("./data/features/"):
-    song_path = os.path.join("./data/features/", song)
-    try:
-        song_feature = np.load(song_path, allow_pickle=True)
-        count = 0
-        distan = 0
-        for i in range(song_feature.shape[1]-query_feature.shape[1]):
-            a = song_feature[:,i+query_feature.shape[1]]
-            count += 1
-            distan += distance.cosine(a, b)
-        song_list.append(song)
-        distance_list.append(distan/count)
-    except:
-        pass
-
-a = min(distance_list)
-print(song_list[a.index(a)])
+    res = {}
+    for song in os.listdir("./data/features/"):
+        song_path = os.path.join("./data/features/", song)
+        try:
+            song_feature = np.load(song_path, allow_pickle=True)
+            count = 0
+            distan = 0
+            distan_min = 999999999
+            for i in range(song_feature.shape[1]-query_feature.shape[1]):
+                a = song_feature[:,i:i+query_feature.shape[1]]
+                a = a.reshape(-1)
+                count += 1
+                distan = distance.cosine(a, b)
+                if distan_min>distan:
+                    distan_min = distan
+            # song_list.append(song)
+            # distance_list.append(distan/count)
+            res[song] = distan_min
+        except:
+            pass
+    return res
+    
+res = search()
+res = dict(sorted(res.items(), key=lambda item: item[1]))
+print(res)
 
