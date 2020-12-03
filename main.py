@@ -5,14 +5,15 @@ import librosa
 from tqdm import tqdm
 import numpy as np
 from python_speech_features import mfcc, fbank, logfbank
-from scipy.spatial import distance
+from scipy.spatial import distance,minkowski_distance
+
 
 from numba import jit
 
 # # y, sr = librosa.load('./motbuoc.mp3')
 # # feat_mby = extract_features(y)
 print("loading")
-y, sr = librosa.load('./motbuoc_cover_q.mp3')
+y, sr = librosa.load('./gap_cover_q.mp3')
 query_feature = librosa.feature.mfcc(y, sr)
 print("done!")
 b =  query_feature.reshape(-1)
@@ -38,7 +39,7 @@ def search():
     res = {}
     for song in os.listdir("./data/features/"):
         song_path = os.path.join("./data/features/", song)
-        # try:
+
         song_feature = np.load(song_path, allow_pickle=True)
         count = 0
         distan = 0
@@ -49,14 +50,14 @@ def search():
             a = a.astype(np.double)
             count += 1
             # distan = distance.cosine(a, b)
-            distan = dtw.distance_fast(a, b)
+            # distan = dtw.distance_fast(a, b)
+            distan = minkowski_distance(a, b)
             if distan_min>distan:
-                distan_min = distan
+                    distan_min = distan
         # song_list.append(song)
         # distance_list.append(distan/count)
         res[song] = distan_min
-        # except:
-        #     pass
+
     return res
 
 res = search()
